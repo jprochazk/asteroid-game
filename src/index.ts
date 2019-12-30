@@ -1,11 +1,6 @@
+import { Game } from "./core/Game";
 
+const container: HTMLDivElement = document.querySelector(".game-container") || (()=>{throw new Error("Failed to find game container")})();
+const game = new Game(container);
 
-let game_container = document.querySelector("div.game-container") ?? (()=>{throw new Error("Failed to get game container!")})();
-let canvas = document.createElement("canvas");
-
-if(game_container && canvas) {
-    let span = document.createElement("span");
-    span.innerHTML = "Future stuff goes here";
-    span.setAttribute("style", "font-size: 20pt; width: 100%; height: 100%; text-align: center; display: block; margin: auto; margin-top: 100px;");
-    game_container.appendChild(span);
-}
+game.run();
