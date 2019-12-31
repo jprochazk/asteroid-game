@@ -89,14 +89,18 @@ export class VertexArrayBuffer {
 
     private constructor(
         public readonly length: number,
-        public readonly VAO: WebGLVertexArrayObject
+        public readonly VAO: WebGLVertexArrayObject,
+        public readonly hasIndexBuffer: boolean
     ) {
     }
 
-    public draw(unbind: boolean = false) {
-        const gl = GL.context;
+    public draw(gl: WebGL2RenderingContext) {
         gl.bindVertexArray(this.VAO);
-        gl.drawElements(gl.TRIANGLES, this.length, gl.UNSIGNED_INT, 0);
+        if(this.hasIndexBuffer) {
+            gl.drawElements(gl.TRIANGLES, this.length, gl.UNSIGNED_INT, 0);
+        } else {
+            gl.drawArrays(gl.TRIANGLES, 0, this.length);
+        }
     }
 
     public static build(vb: VertexBuffer, ib?: IndexBuffer) {
@@ -114,6 +118,6 @@ export class VertexArrayBuffer {
         }
         gl.bindVertexArray(null);
 
-        return new VertexArrayBuffer(drawCount, VAO);
+        return new VertexArrayBuffer(drawCount, VAO, (ib) ? true : false);
     }
 }

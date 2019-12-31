@@ -12,10 +12,14 @@ export class Shader {
     private constructor(
         public readonly id: number,
         public readonly program: WebGLProgram,
-        public readonly uniforms: Map<string, Uniform>,
+        private readonly uniforms: Map<string, Uniform>,
         public readonly layout: VertexLayout
     ) {
 
+    }
+
+    public getUniform(name: string) {
+        return this.uniforms.get(name) || (()=>{throw new Error(`Could not get uniform ${name}`)})();
     }
 
     public bind() {

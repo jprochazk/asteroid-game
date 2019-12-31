@@ -1,3 +1,4 @@
+import { GL } from './Context';
 import { Vector2 } from './../math/Vector2';
 import { Vector3 } from './../math/Vector3';
 import { VertexArrayBuffer, VertexBuffer } from "./shader/Buffer";
@@ -19,8 +20,9 @@ export class Mesh {
     }
 
     public draw() {
+        const gl = GL.context;
         this.geometry.forEach(vao => {
-            vao.draw();
+            vao.draw(gl);
         });
     }
 

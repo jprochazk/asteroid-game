@@ -15,7 +15,7 @@ void main()
 {
     v_texCoord = a_texCoord;
     v_normal = a_normal;
-    gl_Position = u_projection * u_view * u_model * vec4(a_position.xy, 0.0, 1.0);
+    gl_Position = u_projection * u_view * u_model * vec4(a_position.xyz, 1.0);
 }
 
 __FRAGMENT__
