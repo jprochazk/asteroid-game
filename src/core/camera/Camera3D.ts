@@ -69,18 +69,12 @@ export class PerspectiveCamera3D {
 		let vel = this.moveSpeed * deltaTime;
 		switch (direction)
 		{
-			case 'forward': this.position.add(this.front.clone().scale(vel));
-				break;
-			case 'backward': this.position.sub(this.front.clone().scale(vel));
-				break;
-            case 'right': this.position.add(this.right.clone().scale(vel));
-                break;
-			case 'left': this.position.sub(this.right.clone().scale(vel));
-				break;
-			case 'up': this.position.add(this.up.clone().scale(vel));
-				break;
-			case 'down': this.position.sub(this.up.clone().scale(vel));
-				break;
+			case 'forward': this.position.add(this.front.clone().scale(vel)); break;
+			case 'backward': this.position.sub(this.front.clone().scale(vel)); break;
+            case 'right': this.position.add(this.right.clone().scale(vel)); break;
+			case 'left': this.position.sub(this.right.clone().scale(vel)); break;
+			case 'up': this.position.add(this.up.clone().scale(vel)); break;
+			case 'down': this.position.sub(this.up.clone().scale(vel)); break;
         }
         
         this.calcViewMatrix();

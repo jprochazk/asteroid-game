@@ -7,15 +7,6 @@ import { GL } from './gl/Context';
 import { Assets } from './util/AssetLoader';
 import { Vector3 } from './math/Math';
 
-async function run() {
-    const container = document.querySelector(".game-container") || document.body;
-    
-    const canvas = document.createElement("canvas");
-    container.appendChild(canvas);
-    
-    GL.init(canvas);
-}
-
 export class Game {
     // @temp
     private keys: Map<string, boolean>;
