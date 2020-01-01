@@ -10,21 +10,39 @@ import { VertexArrayBuffer, VertexBuffer } from './../gl/shader/Buffer';
  */
 const hasExtension = (path:string, extension:string) => path.substr(path.length-extension.length, path.length) === extension;
 
-export namespace Assets {
+export class AssetManager {
+    private static loadedImages: Map<string, HTMLImageElement>;
+    private static loadedShaders: Map<string, Shader>;
+    private static loadedGeometry: Map<string, VertexArrayBuffer>;
+
+    public static init() {
+        this.loadedImages = new Map();
+        this.loadedShaders = new Map();
+        this.loadedGeometry = new Map();
+    }
+    private constructor() {}
 
     /**
      * Loads an image from a file
      * @param path url to image (can supply absolute url)
      */
-    export function loadImage(path: string): Promise<HTMLImageElement> {
+    public static loadImage(path: string): Promise<HTMLImageElement> {
+        console.log(`loading ${path}`);
         if(!hasExtension(path, ".png") && !hasExtension(path, ".jpg") && !hasExtension(path, ".jpeg") && !hasExtension(path, ".gif")) {
             throw new Error(`${path} does not have extension known extension! (.png / .jp(e)g / .gif)`);
+        }
+
+        if(this.loadedImages.has(path)) {
+            return new Promise(resolve => resolve(this.loadedImages.get(path)));
         }
 
         return new Promise((resolve,reject) => {
             const img = new Image();
 
-            img.onload = () => resolve(img);
+            img.onload = () => {
+                this.loadedImages.set(path, img);
+                resolve(img);
+            }
             img.onerror = () => reject("Failed to fetch image!");
 
             img.src = path;
@@ -35,20 +53,25 @@ export namespace Assets {
      * Loads a .glsl file and builds a shader from it
      * @param path url to .glsl file (can supply absolute url)
      */
-    export function loadShader(path: string): Promise<Shader> {
+    public static loadShader(path: string): Promise<Shader> {
+        console.log(`loading ${path}`);
         if(!hasExtension(path, ".glsl")) {
             throw new Error(`${path} does not have .glsl extension!`);
         }
 
-        return new Promise((resolve, reject) => {
-            console.log(`loading ${path}`);
+        if(this.loadedShaders.has(path)) {
+            return new Promise(resolve => resolve(this.loadedShaders.get(path)));
+        }
 
+        return new Promise((resolve, reject) => {
             let request = new XMLHttpRequest();
             request.open('GET', path);
 
             request.onreadystatechange = (e) => {
                 if(request.readyState === XMLHttpRequest.DONE) {
-                    resolve(Shader.build(request.response));
+                    let shader = Shader.build(request.response);
+                    this.loadedShaders.set(path, shader);
+                    resolve(shader);
                 }
             }
 
@@ -66,24 +89,27 @@ export namespace Assets {
      * @param layout vertex layout to check against
      * @param path url to a .obj file (can supply absolute url)
      */
-    export function loadObj(layout: VertexLayout, path: string): Promise<VertexArrayBuffer> {
+    public static loadObj(layout: VertexLayout, path: string): Promise<VertexArrayBuffer> {
+        console.log(`loading ${path}`);
         if(!hasExtension(path, ".obj")) {
             throw new Error(`${path} does not have .obj extension!`);
         }
 
-        return new Promise((resolve, reject) => {
-            console.log(`loading ${path}`);
+        if(this.loadedGeometry.has(path)) {
+            return new Promise(resolve => resolve(this.loadedGeometry.get(path)));
+        }
 
+        return new Promise((resolve, reject) => {
             let request = new XMLHttpRequest();
             request.open('GET', path);
 
             request.onreadystatechange = (e) => {
                 if(request.readyState === XMLHttpRequest.DONE) {
-
                     let geometry = GeometryParser.parse(request.response);
                     let vbuffer = VertexBuffer.build(geometry, layout);
                     let VAB = VertexArrayBuffer.build(vbuffer);
 
+                    this.loadedGeometry.set(path, VAB);
                     resolve(VAB);
                 }
             }

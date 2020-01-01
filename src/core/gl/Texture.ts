@@ -1,6 +1,6 @@
 import { IdSequence, IdType } from './../util/Id';
 import { GL } from './Context';
-import { Assets } from "../util/AssetLoader";
+import { AssetManager } from "../util/AssetManager";
 
 /**
  * Options for sampling a texture  
@@ -27,7 +27,7 @@ export class Texture {
         this.texture = this.initTexture(this.texture, this.img, options);
 
         // then load the image asset, and replace the default texture with it on promise resolution
-        Assets.loadImage(path)
+        AssetManager.loadImage(path)
         .then(img => {
             this.img = img;
             this.texture = this.initTexture(this.texture, this.img, options);
