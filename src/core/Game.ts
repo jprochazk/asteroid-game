@@ -1,10 +1,13 @@
+import { Renderer3D } from './gl/Renderer3D';
+import { Uniform } from './gl/shader/reflection/Uniform';
+import { UniformBlock } from './gl/UniformBlock';
 import { Vector2 } from './math/Vector2';
 import { VertexArrayBuffer, VertexBuffer, IndexBuffer } from './gl/shader/Buffer';
 import { PerspectiveCamera3D } from './camera/Camera3D';
 import { Spinner } from './ui/LoadingAnimation';
 import { Matrix4 } from './math/Matrix4';
 import { GL } from './gl/Context';
-import { Assets } from './util/AssetLoader';
+import { AssetManager } from './util/AssetManager';
 import { Vector3 } from './math/Math';
 
 export class Game {
@@ -18,21 +21,29 @@ export class Game {
     private loadingSpinner: Spinner;
 
     constructor(container: HTMLElement = document.body) {
+        // loading spinner
         this.loadingSpinner = new Spinner();
         this.loadingSpinner.start();
 
+        // initialize canvas
         this.canvas = document.createElement("canvas");
         container.appendChild(this.canvas);
 
+        // initialize webgl
         GL.init(this.canvas);
         GL.context.clearColor(0,0,0,1);
         GL.context.enable(GL.context.DEPTH_TEST);
 
+        // initialize asset manager
+        AssetManager.init();
+
+        // initialize camera
         this.camera = new PerspectiveCamera3D({
             width: this.canvas.clientWidth,
             height: this.canvas.clientHeight
         });
 
+        // initialize input handling
         this.keys = new Map();
 
         this.canvas.addEventListener("mousedown", () => {
@@ -50,24 +61,34 @@ export class Game {
         });
 
         window.addEventListener("keydown", (e) => {
-            this.keys.set(e.key, true);
+            this.keys.set(e.key.toLowerCase(), true);
         })
         window.addEventListener("keyup", (e) => {
-            this.keys.set(e.key, false);
+            this.keys.set(e.key.toLowerCase(), false);
         })
     }
 
     public async run() {
         const gl = GL.context;
 
-        let shader = await Assets.loadShader("assets/shaders/pos3_tex2_n3.glsl");
-        let obj = await Assets.loadObj(shader.layout, "assets/geometry/cube.obj");
+        // load some stuff
+        let shader = await AssetManager.loadShader("assets/shaders/pos3_tex2_n3.glsl");
+        let obj = await AssetManager.loadObj(shader.layout, "assets/geometry/cube.obj");
+        let obj2 = await AssetManager.loadObj(shader.layout, "assets/geometry/cube.obj");
     
-        let u_model = shader.getUniform("u_model");
-        let u_view = shader.getUniform("u_view");
-        let u_projection = shader.getUniform("u_projection");
+        // prepare uniform block
+        let perFrameUniforms = {
+            "u_view": shader.getUniform("u_view"),
+            "u_projection": shader.getUniform("u_projection")
+        };
+        let perObjectUniforms = {
+            "u_model": shader.getUniform("u_model")
+        };
+
+        const renderer = new Renderer3D(perFrameUniforms, perObjectUniforms);
 
         const loop = () => {
+            // resize if necessary
             if(this.canvas.width !== this.canvas.clientWidth || this.canvas.height !== this.canvas.clientHeight) {
                 this.canvas.width = this.canvas.clientWidth;
                 this.canvas.height = this.canvas.clientHeight;
@@ -75,31 +96,45 @@ export class Game {
                 this.camera.resize(this.canvas.width, this.canvas.height);
             }
 
-            if(this.keys.get("w") || this.keys.get("W")) this.camera.keyMove("forward", 1);
-            if(this.keys.get("s") || this.keys.get("S")) this.camera.keyMove("backward", 1);
-            if(this.keys.get("a") || this.keys.get("A")) this.camera.keyMove("left", 1);
-            if(this.keys.get("d") || this.keys.get("D")) this.camera.keyMove("right", 1);
-            if(this.keys.get(" "))                       this.camera.keyMove("up", 1);
-            if(this.keys.get("Shift"))                   this.camera.keyMove("down", 1);
+            // propagate key input to camera
+            if(this.keys.get("w"))      this.camera.keyMove("forward", 1);
+            if(this.keys.get("s"))      this.camera.keyMove("backward", 1);
+            if(this.keys.get("a"))      this.camera.keyMove("left", 1);
+            if(this.keys.get("d"))      this.camera.keyMove("right", 1);
+            if(this.keys.get(" "))      this.camera.keyMove("up", 1);
+            if(this.keys.get("shift"))  this.camera.keyMove("down", 1);
 
+            // clear the canvas
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-            u_model.set(Matrix4.create().translate(Vector3.create([0,0,-1])));
-            u_view.set(this.camera.viewMatrix);
-            u_projection.set(this.camera.projectionMatrix);
+            renderer.setGlobalUniformData({
+                u_view: this.camera.viewMatrix,
+                u_projection: this.camera.projectionMatrix
+            });
 
+            renderer.queue({
+                VAO: obj,
+                uniformData: {
+                    u_model: Matrix4.create().translate(Vector3.create([-5,0,-1]))
+                }
+            });
 
-            shader.bind();
-            u_view.upload();
-            u_projection.upload();
-            u_model.upload();
+            renderer.queue({
+                VAO: obj,
+                uniformData: {
+                    u_model: Matrix4.create().translate(Vector3.create([0,0,-1]))
+                }
+            });
+            
+            renderer.render(shader);
 
-            obj.draw(gl);
-
+            // loop
             window.requestAnimationFrame(loop);
         }
 
+        // stop loading spinner
         this.loadingSpinner.stop();
+        // start loop
         window.requestAnimationFrame(loop);
     }
 }
