@@ -26,11 +26,12 @@ export class Uniform {
 
         let setter = GL.getPartialUniformSetter(type, location);
 
-        return new Uniform(name, setter);
+        return new Uniform(name, type, setter);
     }
 
     private constructor(
         public readonly name: string,
+        public readonly type: string,
         private readonly setter: (data: any)=>void
     ) {
 
@@ -45,6 +46,7 @@ export class Uniform {
     }
 
     public upload(): this {
+        if(!this.dirty) throw new Error(`uniform ${this.name} has no data set or already uploaded!`);
         this.setter(this.data);
 
         this.dirty = false;
