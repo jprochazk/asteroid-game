@@ -1,7 +1,5 @@
-import { Vector3 } from './../math/Vector3';
+import { Vector3, Matrix4 } from './../math/Math';
 import { GL } from './../gl/Context';
-import { Matrix4 } from './../math/Matrix4';
-import './../math/Math';
 
 export class PerspectiveCamera3D {
     private worldUp: Vector3;
@@ -100,10 +98,12 @@ export class PerspectiveCamera3D {
     }
 
     private calcViewMatrix() {
+        let ry = Math.rad(this.yaw);
+        let rp = Math.rad(this.pitch);
         this.front = Vector3.create([
-            Math.cos(Math.rad(this.yaw)) * Math.cos(Math.rad(this.pitch)),
-            Math.sin(Math.rad(this.pitch)),
-            Math.sin(Math.rad(this.yaw)) * Math.cos(Math.rad(this.pitch))
+            Math.cos(ry) * Math.cos(rp),
+            Math.sin(rp),
+            Math.sin(ry) * Math.cos(rp)
         ]).normalize();
         this.right = this.front.cross(this.worldUp).normalize();
         this.up = this.right.cross(this.front).normalize();

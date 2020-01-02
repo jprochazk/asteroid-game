@@ -1,8 +1,4 @@
 import { Renderer3D } from './gl/Renderer3D';
-import { Uniform } from './gl/shader/reflection/Uniform';
-import { UniformBlock } from './gl/UniformBlock';
-import { Vector2 } from './math/Vector2';
-import { VertexArrayBuffer, VertexBuffer, IndexBuffer } from './gl/shader/Buffer';
 import { PerspectiveCamera3D } from './camera/Camera3D';
 import { Spinner } from './ui/LoadingAnimation';
 import { Matrix4 } from './math/Matrix4';
@@ -39,6 +35,7 @@ export class Game {
 
         // initialize camera
         this.camera = new PerspectiveCamera3D({
+            sensitivity: 0.1,
             width: this.canvas.clientWidth,
             height: this.canvas.clientHeight
         });
@@ -120,7 +117,7 @@ export class Game {
             });
 
             renderer.queue({
-                VAO: obj,
+                VAO: obj2,
                 uniformData: {
                     u_model: Matrix4.create().translate(Vector3.create([0,0,-1]))
                 }

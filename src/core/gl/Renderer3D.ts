@@ -2,7 +2,6 @@ import { GL } from './Context';
 import { Shader } from './shader/Shader';
 import { Uniform } from './shader/reflection/Uniform';
 import { UniformBlock } from './UniformBlock';
-import { Texture } from './Texture';
 import { VertexArrayBuffer } from './shader/Buffer';
 
 export interface Renderable {
