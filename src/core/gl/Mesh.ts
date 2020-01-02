@@ -1,39 +1,11 @@
-import { GL } from './Context';
 import { Vector2 } from './../math/Vector2';
 import { Vector3 } from './../math/Vector3';
-import { VertexArrayBuffer, VertexBuffer } from "./shader/Buffer";
-
-
-export class Mesh {
-
-    /**
-     * @param geometry array of VertexArrayBuffer objects - will be drawn in the order the array is in
-     */
-    constructor(
-        private readonly geometry: Array<VertexArrayBuffer>
-    ) {
-
-    }
-
-    public addVertexArray(vab: VertexArrayBuffer) {
-        this.geometry.push(vab);
-    }
-
-    public draw() {
-        const gl = GL.context;
-        this.geometry.forEach(vao => {
-            vao.draw(gl);
-        });
-    }
-
-}
 
 export class MeshBuilder {
     private static readonly VERTEX_REGEX = /^v\s/;
     private static readonly NORMAL_REGEX = /^vn\s/;
     private static readonly TEXTURE_REGEX = /^vt\s/;
     private static readonly FACE_REGEX = /^f\s/;
-    private static readonly WHITESPACE_REGEX = /\s+/;
     // @todo support .mtl files
     // @todo support usemtl in .obj files
     // private static readonly USE_MATERIAL_REGEX = /^usemtl/; 
