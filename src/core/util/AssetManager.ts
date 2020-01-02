@@ -1,7 +1,7 @@
 import { Shader } from './../gl/shader/Shader';
-import { GeometryParser } from './../gl/Mesh';
+import { MeshBuilder } from './../gl/Mesh';
 import { VertexLayout } from './../gl/shader/reflection/VertexLayout';
-import { VertexArrayBuffer, VertexBuffer } from './../gl/shader/Buffer';
+import { VertexArrayBuffer, VertexBuffer, IndexBuffer } from './../gl/shader/Buffer';
 
 /**
  * Helper function to determine whether a given path has a specific extension.
@@ -105,9 +105,10 @@ export class AssetManager {
 
             request.onreadystatechange = (e) => {
                 if(request.readyState === XMLHttpRequest.DONE) {
-                    let geometry = GeometryParser.parse(request.response);
-                    let vbuffer = VertexBuffer.build(geometry, layout);
-                    let VAB = VertexArrayBuffer.build(vbuffer);
+                    let geometry = MeshBuilder.parse(request.response);
+                    let vbuffer = VertexBuffer.build(geometry.vertexBuffer, layout);
+                    let ibuffer = IndexBuffer.build(geometry.indexBuffer);
+                    let VAB = VertexArrayBuffer.build(vbuffer, ibuffer);
 
                     this.loadedGeometry.set(path, VAB);
                     resolve(VAB);
