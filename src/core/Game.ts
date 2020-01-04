@@ -71,7 +71,7 @@ export class Game {
         // load some stuff
         let shader = await AssetManager.loadShader("assets/shaders/pos3_tex2_n3.glsl");
         let obj = await AssetManager.loadObj(shader.layout, "assets/geometry/cube.obj");
-        let obj2 = await AssetManager.loadObj(shader.layout, "assets/geometry/cube.obj");
+        let obj2 = await AssetManager.loadObj(shader.layout, "assets/geometry/sphere.obj");
     
         // prepare uniform block
         let perFrameUniforms = {
@@ -119,7 +119,7 @@ export class Game {
             renderer.queue({
                 VAO: obj2,
                 uniformData: {
-                    u_model: Matrix4.create().translate(Vector3.create([0,0,-1]))
+                    u_model: Matrix4.create().translate(Vector3.create([0,0,-1])).scale(Vector3.create([0.1, 0.1, 0.1]))
                 }
             });
             
