@@ -1,11 +1,18 @@
 import { Vector2 } from './../math/Vector2';
 import { Vector3 } from './../math/Vector3';
 
+class MeshParseError extends Error {
+    constructor(lineNum: number, line: string, errorMessage: string) {
+        super(`error while parsing .obj file\n\t(${lineNum}) ${line}: ${errorMessage}`);
+    }
+}
+
 export class MeshBuilder {
     private static readonly VERTEX_REGEX = /^v\s/;
     private static readonly NORMAL_REGEX = /^vn\s/;
     private static readonly TEXTURE_REGEX = /^vt\s/;
     private static readonly FACE_REGEX = /^f\s/;
+    private static readonly WHITESPACE_REGEX = /\s+/;
     // @todo support .mtl files
     // @todo support usemtl in .obj files
     // private static readonly USE_MATERIAL_REGEX = /^usemtl/; 
@@ -27,16 +34,26 @@ export class MeshBuilder {
         let currentLineNum = 0;
         for(const line of lines) {
 
+            line.trim();
             // split the line by whitespace
             // v 1.000000 -1.000000 -1.000000
             // becomes
             // ['v', '1.000000', '-1.000000', '-1.000000']
-            const line_elements = line.split(' ');
+            const line_elements = line.split(this.WHITESPACE_REGEX);
             // remove the first element as we don't need it in the array
             line_elements.shift();
 
+            // @temp fix for when lines inexplicably have another element at the end that is empty
+            if(line_elements[line_elements.length - 1] === '') {
+                line_elements.pop();
+            }
+
             // is this line "v X Y Z"?
             if(this.VERTEX_REGEX.test(line)) {
+                if(line_elements.length !== 3) {
+                    console.log(line_elements);
+                    throw new MeshParseError(currentLineNum, line, "vertices must have 3 elements!");
+                }
                 let data: [number,number,number] = [0,0,0];
                 line_elements.forEach((v, i) => {
                     data[i] = parseFloat(v);
@@ -45,6 +62,10 @@ export class MeshBuilder {
             } 
             // is this line "vn X Y Z"?
             else if(this.NORMAL_REGEX.test(line)) {
+                if(line_elements.length !== 3) {
+                    console.log(line_elements);
+                    throw new MeshParseError(currentLineNum, line, "normals must have 3 elements!");
+                }
                 let data: [number,number,number] = [0,0,0];
                 line_elements.forEach((v, i) => {
                     data[i] = parseFloat(v);
@@ -53,10 +74,9 @@ export class MeshBuilder {
             } 
             // is this line "vt U V"?
             else if(this.TEXTURE_REGEX.test(line)) {
-                // we don't support 3D texture coordinates
                 if(line_elements.length !== 2) {
                     console.log(line_elements);
-                    throw new Error(`error while parsing .obj file at line ${currentLineNum}, texture coords must not have more than 2 elements!\n\t${line}`);
+                    throw new MeshParseError(currentLineNum, line, "texture coordinates must have 2 elements!");
                 }
                 let data: [number,number] = [0,0];
                 line_elements.forEach((v, i) => {
@@ -66,6 +86,10 @@ export class MeshBuilder {
             } 
             // is this line "f V/VT/VN V/VT/VN V/VT/VN"?
             else if(this.FACE_REGEX.test(line)) {
+                if(line_elements.length !== 3) {
+                    console.log(line_elements);
+                    throw new MeshParseError(currentLineNum, line, "faces must have 3 elements!");
+                }
                 line_elements.forEach(v => {
                     // constructing faces has two routes:
                     // 1. constructing a new face
