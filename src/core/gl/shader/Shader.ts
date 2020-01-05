@@ -1,4 +1,4 @@
-import { IdSequence, IdType } from './../../util/Id';
+import { UUID } from './../../util/UUID';
 import { GL } from './../Context';
 import { Uniform } from './reflection/Uniform';
 import { ShaderUtils } from "./ShaderUtils";
@@ -7,15 +7,14 @@ import { VertexLayout } from "./reflection/VertexLayout";
 
 
 export class Shader {
-
+    public readonly id: UUID;
 
     private constructor(
-        public readonly id: number,
         public readonly program: WebGLProgram,
         private readonly uniforms: Map<string, Uniform>,
         public readonly layout: VertexLayout
     ) {
-
+        this.id = new UUID();
     }
 
     public getUniform(name: string) {
@@ -36,7 +35,6 @@ export class Shader {
 
         let reflectionData = ShaderReflection.reflect(program, sources);
         return new Shader(
-            IdSequence.nextId(IdType.Shader),
             program, 
             reflectionData.uniforms, 
             VertexLayout.fromAttributes(reflectionData.attributes)

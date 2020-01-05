@@ -1,4 +1,4 @@
-import { IdSequence, IdType } from './../util/Id';
+import { UUID } from './../util/UUID';
 import { GL } from './Context';
 import { AssetManager } from "../util/AssetManager";
 
@@ -14,7 +14,7 @@ export interface TextureOptions {
 }
 
 export class Texture {
-    private id: number;
+    private id: UUID;
     private img: HTMLImageElement;
     private texture: WebGLTexture;
 
@@ -35,7 +35,7 @@ export class Texture {
             console.error(err);
         })
 
-        this.id = IdSequence.nextId(IdType.Texture);
+        this.id = new UUID();
     }
 
     public getHandle(): WebGLTexture { return this.texture; }
