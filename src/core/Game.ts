@@ -1,7 +1,7 @@
+import { Scene, SceneNode, NodeData } from './scene/Scene';
 import { Renderer3D } from './gl/Renderer3D';
 import { PerspectiveCamera3D } from './camera/Camera3D';
 import { Spinner } from './ui/LoadingAnimation';
-import { Matrix4 } from './math/Matrix4';
 import { GL } from './gl/Context';
 import { AssetManager } from './util/AssetManager';
 import { Vector3 } from './math/Math';
@@ -13,6 +13,7 @@ export class Game {
     private hasFocus: boolean = false;
 
     private canvas: HTMLCanvasElement;
+    private renderer: Renderer3D;
     private camera: PerspectiveCamera3D;
     private loadingSpinner: Spinner;
 
@@ -29,6 +30,8 @@ export class Game {
         GL.init(this.canvas);
         GL.context.clearColor(0,0,0,1);
         GL.context.enable(GL.context.DEPTH_TEST);
+
+        this.renderer = new Renderer3D();
 
         // initialize asset manager
         AssetManager.init();
@@ -68,23 +71,56 @@ export class Game {
     public async run() {
         const gl = GL.context;
 
-        // load some stuff
+        // build the scene
+        // @todo build from json file including loading all the assets required
+        // @todo cache resources, 
         let shader = await AssetManager.loadShader("assets/shaders/pos3_tex2_n3.glsl");
-        let obj = await AssetManager.loadObj(shader.layout, "assets/geometry/cube.obj");
-        let obj2 = await AssetManager.loadObj(shader.layout, "assets/geometry/sphere.obj");
-    
-        // prepare uniform block
-        let perFrameUniforms = {
-            "u_view": shader.getUniform("u_view"),
-            "u_projection": shader.getUniform("u_projection")
+        let scene = new Scene(this.camera);
+        let cubeObj: NodeData = {
+            object: {
+                shader: shader,
+                mesh: await AssetManager.loadObj(shader.layout, "assets/geometry/cube.obj")
+            },
+            transform: {
+                position: Vector3.create([0,0,0])
+            }
         };
-        let perObjectUniforms = {
-            "u_model": shader.getUniform("u_model")
+        let sphereObj: NodeData = {
+            object: {
+                shader: shader,
+                mesh: await AssetManager.loadObj(shader.layout, "assets/geometry/sphere.obj")
+            },
+            transform: {
+                position: Vector3.create([15,0,15]),
+                scale: Vector3.create([0.1,0.1,0.1])
+            }
+        };
+        let sphereObj2: NodeData = {
+            object: {
+                shader: shader,
+                mesh: await AssetManager.loadObj(shader.layout, "assets/geometry/sphere.obj")
+            },
+            transform: {
+                position: Vector3.create([5,0,5]),
+                scale: Vector3.create([0.05,0.05,0.05])
+            }
         };
 
-        const renderer = new Renderer3D(perFrameUniforms, perObjectUniforms);
+        // 1st layer - parent is root
+        let cubeNode = scene.createNode(cubeObj);
+        let sphereNode = scene.createNode(sphereObj);
 
+        // 2nd layer - parent is sphereNode
+        let sphereNode2 = sphereNode.createNode(sphereObj2);
+        sphereNode.addNode(sphereNode2);
+
+        // push both 1st layer nodes
+        scene.nodes.push(cubeNode);
+        scene.nodes.push(sphereNode);
+
+        let t = 0;
         const loop = () => {
+            t = 0.001 + (t % 360);
             // resize if necessary
             if(this.canvas.width !== this.canvas.clientWidth || this.canvas.height !== this.canvas.clientHeight) {
                 this.canvas.width = this.canvas.clientWidth;
@@ -104,26 +140,11 @@ export class Game {
             // clear the canvas
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-            renderer.setGlobalUniformData({
-                u_view: this.camera.viewMatrix,
-                u_projection: this.camera.projectionMatrix
-            });
+            sphereNode.data.transform!.position = Vector3.create([Math.cos(t) * 15, 0, Math.sin(t) * 15]);
+            sphereNode2.data.transform!.position = Vector3.create([Math.cos(t * 10) * 5, Math.cos(t * 10) * 2.4, Math.sin(t * 10) * 5]);
 
-            renderer.queue({
-                VAO: obj,
-                uniformData: {
-                    u_model: Matrix4.create().translate(Vector3.create([-5,0,-1]))
-                }
-            });
-
-            renderer.queue({
-                VAO: obj2,
-                uniformData: {
-                    u_model: Matrix4.create().translate(Vector3.create([0,0,-1])).scale(Vector3.create([0.1, 0.1, 0.1]))
-                }
-            });
-            
-            renderer.render(shader);
+            let queue = scene.buildRenderQueue();
+            this.renderer.render(queue);
 
             // loop
             window.requestAnimationFrame(loop);

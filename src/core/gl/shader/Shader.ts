@@ -1,3 +1,4 @@
+import { UniformBlock } from './../UniformBlock';
 import { UUID } from './../../util/UUID';
 import { GL } from './../Context';
 import { Uniform } from './reflection/Uniform';
@@ -11,14 +12,14 @@ export class Shader {
 
     private constructor(
         public readonly program: WebGLProgram,
-        private readonly uniforms: Map<string, Uniform>,
-        public readonly layout: VertexLayout
+        public readonly layout: VertexLayout,
+        private readonly uniformBlock: UniformBlock
     ) {
         this.id = new UUID();
     }
 
-    public getUniform(name: string) {
-        return this.uniforms.get(name) || (()=>{throw new Error(`Could not get uniform ${name}`)})();
+    public setUniforms(data: { [x: string]: any }) {
+        this.uniformBlock.set(data);
     }
 
     public bind() {
@@ -35,9 +36,9 @@ export class Shader {
 
         let reflectionData = ShaderReflection.reflect(program, sources);
         return new Shader(
-            program, 
-            reflectionData.uniforms, 
-            VertexLayout.fromAttributes(reflectionData.attributes)
+            program,
+            VertexLayout.fromAttributes(reflectionData.attributes),
+            reflectionData.uniforms
         );
     }
 }

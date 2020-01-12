@@ -18,17 +18,31 @@ export class UniformBlock {
 
     /**
      * Set the data of the uniform block.  
-     * Only checks if all required uniform data is present, does not check types
-     * @param data 
+     * Checks if all uniforms are present, does not check for types
+     * @param uniformData 
      */
-    public set(data: { [x: string]: any }) {
+    public set(uniformData: { [x: string]: any }) {
         for (const [name, uniform] of this.uniforms) {
-            if(!data[name]) throw new Error(`missing data for uniform ${name}`);
-            uniform.set(data[name]);
+            if(!uniformData[name]) throw new Error(`missing data for uniform "${name}". data: ${uniformData}`);
+            uniform.set(uniformData[name]);
+            uniform.upload();
         }
     }
 
-    public upload() {
-        this.uniforms.forEach(uniform => uniform.upload());
+    /**
+     * Set the data of the uniform block.  
+     * Allows for partial 
+     * @param uniformData 
+     */
+    public setPartial(uniformData: { [x: string]: any }) {
+        for (const name in uniformData) {
+            if(uniformData.hasOwnProperty(name)) {
+                let uniform = this.uniforms.get(name);
+                if(!uniform) throw new Error(`could not find uniform "${name}". data: ${uniformData}`);
+
+                uniform.set(uniformData[name]);
+                uniform.upload();
+            }
+        }
     }
 }

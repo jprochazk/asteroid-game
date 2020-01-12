@@ -30,12 +30,6 @@ export {
     Quaternion
 }
 
-export default {
-    Vector2, Vector3, Vector4,
-    Matrix4,
-    Quaternion
-}
-
 
 
 

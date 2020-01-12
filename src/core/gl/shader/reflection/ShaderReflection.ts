@@ -1,9 +1,10 @@
+import { UniformBlock } from './../../UniformBlock';
 import { Attribute } from "./Attribute";
 import { Uniform } from "./Uniform";
 
 export interface ReflectionData {
     attributes: Array<Attribute>,
-    uniforms: Map<string, Uniform>
+    uniforms: UniformBlock
 }
 
 export namespace ShaderReflection {
@@ -16,11 +17,12 @@ export namespace ShaderReflection {
         
         let combined_source = sources.vertex + sources.fragment;
         let uniform_lines = combined_source.match(/(?<!\/)uniform.+\b/g) || [];
-        let uniforms: Map<string, Uniform> = new Map();
+        let uniformMap: { [x:string]: Uniform } = {};
         for(const uniform_line of uniform_lines) {
             let uniform = Uniform.build(shader, uniform_line);
-            uniforms.set(uniform.name, uniform);
+            uniformMap[uniform.name] = uniform;
         }
+        let uniforms = new UniformBlock(uniformMap);
 
         return {attributes, uniforms};
     }

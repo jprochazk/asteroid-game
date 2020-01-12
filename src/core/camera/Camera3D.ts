@@ -1,4 +1,5 @@
-import { Vector3, Matrix4 } from './../math/Math';
+import { Vector3 } from './../math/Math';
+import { Matrix4 } from './../math/Matrix4';
 import { GL } from './../gl/Context';
 
 export class PerspectiveCamera3D {
