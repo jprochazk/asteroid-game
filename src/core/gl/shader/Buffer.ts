@@ -1,14 +1,15 @@
-import { GL } from './../Context';
-import { VertexLayout } from "./reflection/VertexLayout";
+import { ThrowAnywhere } from 'core/exception/Exception';
+import { GL } from 'core/gl/Context';
+import { VertexLayout } from "core/gl/shader/VertexLayout";
 
 const createGLBuffer = () => 
        GL.context.createBuffer() 
-    || (()=>{throw new Error("Failed to create WebGL2 buffer")})()
+    || ThrowAnywhere("Failed to create WebGL2 buffer")
 ;
 
 const createGLArrayBuffer = () => 
        GL.context.createVertexArray() 
-    || (()=>{throw new Error("Failed to create WebGL2 buffer")})()
+    || ThrowAnywhere("Failed to create WebGL2 buffer")
 ;
 
 

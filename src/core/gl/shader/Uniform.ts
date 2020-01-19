@@ -1,11 +1,5 @@
-import { GL } from './../../Context';
+import { GL } from 'core/gl/Context';
 
-export type UniformType = 'mat4' | 'vec4' | 'sampler2D';
-
-const isKnownUniformType = (type: string): type is UniformType => 
-       type === 'mat4' 
-    || type === 'vec4'
-    || type === 'sampler2D'
 
 export class Uniform {
     private dirty: boolean = false;
@@ -13,15 +7,11 @@ export class Uniform {
 
     public static build(
         shader: WebGLProgram,
-        uniform: string
+        name: string,
+        type: string
     ) {
-        let tokens = uniform.split(" ");
-
-        let name = tokens[2];
-        let type = tokens[1];
         let location = GL.context.getUniformLocation(shader, name);
 
-        if(!isKnownUniformType(type)) throw new Error(`Unsupported uniform type: "uniform ${type} ${name}"`);
         if(!location) throw new Error(`Uniform location not found: "uniform ${type} ${name}"`);
 
         let setter = GL.getPartialUniformSetter(type, location);

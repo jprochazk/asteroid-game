@@ -1,6 +1,7 @@
-import { UUID } from './../util/UUID';
-import { GL } from './Context';
-import { AssetManager } from "../util/AssetManager";
+import { ThrowAnywhere } from 'core/exception/Exception';
+import { UUID } from 'core/util/UUID';
+import { GL } from 'core/gl/Context';
+import { AssetManager } from "core/io/AssetManager";
 
 /**
  * Options for sampling a texture  
@@ -19,9 +20,9 @@ export class Texture {
     private texture: WebGLTexture;
 
     constructor(path: string, options?: TextureOptions) {
-        this.texture = GL.context.createTexture() || (()=>{throw new Error("Failed to create WebGL texture!")})();
+        this.texture = GL.context.createTexture() || ThrowAnywhere("Failed to create WebGL texture!");
         
-        let default_image: HTMLImageElement = document.querySelector("#missing") || (()=>{throw new Error("Failed to select default texture!")})();
+        let default_image: HTMLImageElement = document.querySelector("#missing") || ThrowAnywhere("Failed to select default texture!");
         this.img = default_image;
         // initialize this texture with the default one
         this.texture = this.initTexture(this.texture, this.img, options);

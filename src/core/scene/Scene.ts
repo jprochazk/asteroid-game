@@ -1,9 +1,10 @@
-import { Shader } from './../gl/shader/Shader';
-import { Matrix4 } from './../math/Matrix4';
-import { RenderQueue } from './../gl/Renderer3D';
-import { PerspectiveCamera3D } from './../camera/Camera3D';
-import { VertexArrayBuffer } from './../gl/shader/Buffer';
-import { Vector3 } from "../math/Math";
+import { PointLight } from './PointLight';
+import { Material } from 'core/scene/Material';
+import { Shader } from 'core/gl/shader/Shader';
+import { Vector3, Matrix4 } from 'core/math/Math';
+import { RenderQueue } from 'core/gl/Renderer3D';
+import { Camera } from 'core/camera/Camera3D';
+import { VertexArrayBuffer } from 'core/gl/shader/Buffer';
 
 export interface Transform {
     position: Vector3;
@@ -12,29 +13,34 @@ export interface Transform {
 }
 
 export interface Object {
-    readonly shader: Shader;
-    readonly mesh: VertexArrayBuffer;
+    shader: Shader;
+    material: Material;
+    mesh: VertexArrayBuffer;
 }
 
 export interface NodeData {
-    readonly transform?: Transform;
-    readonly object?: Object;
+    transform?: Transform;
+    object?: Object;
+    lightProperties?: PointLight;
 }
 
+export type SceneNodeType = 'light' | 'object' | 'anchor';
+
 export class SceneNode {
-    public readonly type: 'leaf' | 'group';
 
     public constructor(
-        public readonly root: Scene,
-        public readonly parent: SceneNode | null = null,
-        public readonly data: NodeData,
-        public readonly children: SceneNode[] = []
-    ) {
-        this.type = (children) ? 'leaf' : 'group';
-    }
+        public type: SceneNodeType,
+        public root: Scene,
+        public data: NodeData,
+        public parent: SceneNode | null = null,
+        public children: SceneNode[] = []
+    ) {}
 
-    public createNode(data: NodeData) {
-        return new SceneNode(this.root, this, data);
+    public createNode(type: SceneNodeType, data: NodeData) {
+        let node = new SceneNode(type, this.root, data, null);
+        this.children.push(node);
+
+        return node;
     }
 
     public addNode(node: SceneNode) {
@@ -42,40 +48,65 @@ export class SceneNode {
     }
 }
 
-// need to get each object's VAO and transformation matrix
-
 export class Scene {
     
     public constructor(
-        public readonly camera: PerspectiveCamera3D,
+        public camera: Camera,
         public readonly nodes: SceneNode[] = []
     ) {
 
     }
 
-    public createNode(data: NodeData) {
-        return new SceneNode(this, null, data);
+    public createNode(type: SceneNodeType, data: NodeData) {
+        let node = new SceneNode(type, this, data, null);
+        this.nodes.push(node);
+
+        return node;
     }
 
     public addNode(node: SceneNode) {
         this.nodes.push(node);
     }
 
-    public buildRenderQueue(): RenderQueue {
+    public build(): RenderQueue {
+        let lights: PointLight[] = [];
         let queue: RenderQueue = [];
 
         // traverse the tree
         this.nodes.forEach(node => {
-            this.traverse(queue, node);
+            this.traverse(queue, lights, node);
         });
+
+        // apply lights to every obj in the scene
+        // @todo this could be optimized to only account for obj within the light's bounding volume or space partitioning grid cell
+        lights.forEach((light, index) => {
+            queue.forEach(obj => {
+                // @todo remove this hardcoded bs
+                // dont apply light properties to any lights
+                if(obj.type === "light") return;
+
+                // @todo remove this hardcoded bs
+                // light.appendUniforms ??
+                // or light.uploadUniforms in renderer
+                // but lights are shader-specific, so think about this carefully
+                obj.uniformData["u_light["+index+"].color"] = light.color;
+                obj.uniformData["u_light["+index+"].position"] = light.position;
+                obj.uniformData["u_light["+index+"].constant"] = light.constant;
+                obj.uniformData["u_light["+index+"].linear"] = light.linear;
+                obj.uniformData["u_light["+index+"].quadratic"] = light.quadratic;
+            });
+        })
 
         return queue;
     }
 
-    /**
-     * 
-     */
-    private traverse(queue: RenderQueue, node: SceneNode, parentPos: Vector3 = Vector3.create()) {
+    private traverse(
+        queue: RenderQueue,
+        lights: PointLight[],
+        node: SceneNode, 
+        parentPos: Vector3 = Vector3.create()
+    ) {
+
         // get position of current node
         let currentPos = (node.data.transform) ? parentPos.clone().add(node.data.transform.position) : parentPos;
         
@@ -83,8 +114,17 @@ export class Scene {
         if(node.children) {
             node.children.forEach(child => {
                 // here we propagate currentPos to all children
-                this.traverse(queue, child, currentPos);
+                this.traverse(queue, lights, child, currentPos);
             });
+        }
+
+        if(node.type === "anchor") return;
+
+        // if node is a light
+        if(node.type === "light") {
+            if(!node.data.lightProperties) throw new Error(`Light properties not found for node of type "light"! ${node}`);
+            node.data.lightProperties.position = currentPos;
+            lights.push(node.data.lightProperties);
         }
 
         // if we have an object to render
@@ -93,9 +133,9 @@ export class Scene {
             let transform = Matrix4.create().translate(currentPos);
             if(node.data.transform) {
                 if(node.data.transform.rotation) {
-                    transform = transform.rotateX(node.data.transform.rotation.x) ?? transform;
-                    transform = transform.rotateY(node.data.transform.rotation.y) ?? transform;
-                    transform = transform.rotateZ(node.data.transform.rotation.z) ?? transform;
+                    transform = transform.rotateX(Math.rad(node.data.transform.rotation.x)) ?? transform;
+                    transform = transform.rotateY(Math.rad(node.data.transform.rotation.y)) ?? transform;
+                    transform = transform.rotateZ(Math.rad(node.data.transform.rotation.z)) ?? transform;
                 }
                 if(node.data.transform.scale) {
                     transform = transform.scale(node.data.transform.scale);
@@ -106,15 +146,34 @@ export class Scene {
             let mesh = node.data.object.mesh;
             let shader = node.data.object.shader;
 
+            // @todo remove this hardcoded bs
+            let uniformData = {};
+            if(node.type === 'light') {
+                uniformData = {
+                    u_view: this.camera.viewMatrix,
+                    u_projection: this.camera.projectionMatrix,
+                    u_model: transform,
+                    u_lightColor: node.data.lightProperties!.color
+                };
+            } else {
+                uniformData = {
+                    u_view: this.camera.viewMatrix,
+                    u_projection: this.camera.projectionMatrix,
+                    u_model: transform,
+                    "u_viewPos": this.camera.position,
+                    "u_material.ambient": node.data.object.material.ambient,
+                    "u_material.diffuse": node.data.object.material.diffuse,
+                    "u_material.specular": node.data.object.material.specular,
+                    "u_material.shininess": node.data.object.material.shininess
+                };
+            }
+
             // then add it to the queue
             queue.push({
+                type: node.type,
                 mesh,
                 shader,
-                uniformData: {
-                    u_projection: this.camera.projectionMatrix,
-                    u_view: this.camera.viewMatrix,
-                    u_model: transform
-                }
+                uniformData
             });
         }
     }

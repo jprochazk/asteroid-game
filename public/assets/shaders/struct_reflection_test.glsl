@@ -7,15 +7,24 @@ in vec3 a_normal;
 out vec2 v_texCoord;
 out vec3 v_normal;
 
+struct SomeStruct {
+    mat4 someMatrix;
+};
+
+struct Camera {
+    mat4 view;
+    mat4 projection;
+    SomeStruct strct;
+};
+
+uniform Camera u_camera;
 uniform mat4 u_model;
-uniform mat4 u_view;
-uniform mat4 u_projection;
 
 void main()
 {
     v_texCoord = a_texCoord;
     v_normal = a_normal;
-    gl_Position = u_projection * u_view * u_model * vec4(a_position.xyz, 1.0);
+    gl_Position = u_camera.projection * u_camera.view * u_model * vec4(a_position.xyz, 1.0);
 }
 
 __FRAGMENT__

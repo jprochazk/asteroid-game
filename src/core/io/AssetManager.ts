@@ -1,7 +1,7 @@
-import { Shader } from './../gl/shader/Shader';
-import { MeshBuilder } from './../gl/Mesh';
-import { VertexLayout } from './../gl/shader/reflection/VertexLayout';
-import { VertexArrayBuffer, VertexBuffer, IndexBuffer } from './../gl/shader/Buffer';
+import { Shader } from 'core/gl/shader/Shader';
+import { MeshBuilder } from 'core/gl/Mesh';
+import { VertexLayout } from 'core/gl/shader/VertexLayout';
+import { VertexArrayBuffer, VertexBuffer, IndexBuffer } from 'core/gl/shader/Buffer';
 
 /**
  * Helper function to determine whether a given path has a specific extension.
@@ -11,14 +11,19 @@ import { VertexArrayBuffer, VertexBuffer, IndexBuffer } from './../gl/shader/Buf
 const hasExtension = (path:string, extension:string) => path.substr(path.length-extension.length, path.length) === extension;
 
 export class AssetManager {
+    private static initialized: boolean = false;
+
     private static loadedImages: Map<string, HTMLImageElement>;
     private static loadedShaders: Map<string, Shader>;
     private static loadedGeometry: Map<string, VertexArrayBuffer>;
 
     public static init() {
+        if(this.initialized) throw new Error("Asset manager already initialized!");
         this.loadedImages = new Map();
         this.loadedShaders = new Map();
         this.loadedGeometry = new Map();
+
+        this.initialized = true;
     }
     private constructor() {}
 
@@ -27,6 +32,7 @@ export class AssetManager {
      * @param path url to image (can supply absolute url)
      */
     public static loadImage(path: string): Promise<HTMLImageElement> {
+        if(!this.initialized) throw new Error("Asset manager not initialized!");
         console.log(`loading ${path}`);
         if(!hasExtension(path, ".png") && !hasExtension(path, ".jpg") && !hasExtension(path, ".jpeg") && !hasExtension(path, ".gif")) {
             throw new Error(`${path} does not have extension known extension! (.png / .jp(e)g / .gif)`);
@@ -54,6 +60,7 @@ export class AssetManager {
      * @param path url to .glsl file (can supply absolute url)
      */
     public static loadShader(path: string): Promise<Shader> {
+        if(!this.initialized) throw new Error("Asset manager not initialized!");
         console.log(`loading ${path}`);
         if(!hasExtension(path, ".glsl")) {
             throw new Error(`${path} does not have .glsl extension!`);
@@ -90,6 +97,7 @@ export class AssetManager {
      * @param path url to a .obj file (can supply absolute url)
      */
     public static loadObj(layout: VertexLayout, path: string): Promise<VertexArrayBuffer> {
+        if(!this.initialized) throw new Error("Asset manager not initialized!");
         console.log(`loading ${path}`);
         if(!hasExtension(path, ".obj")) {
             throw new Error(`${path} does not have .obj extension!`);

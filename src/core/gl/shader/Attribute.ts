@@ -1,4 +1,4 @@
-import { GL } from './../../Context';
+import { GL } from 'core/gl/Context';
 
 export enum AttributeBasicType {
     FLOAT = "float", 
@@ -29,12 +29,12 @@ export class AttributeCompoundType {
         return `{ name: \"${this._name}\", stride: ${this._stride/4}*4 }`;
     }
 
-    static fromString(str: string) {
-        switch(str.toLowerCase()) {
+    static fromString(type: string) {
+        switch(type.toLowerCase()) {
             case "vec2": return this.VEC2;
             case "vec3": return this.VEC3;
             case "vec4": return this.VEC4;
-            default: throw new Error(`Unknown or unsupported attribute type: ${str.toLowerCase()}`);
+            default: throw new Error(`Unknown or unsupported attribute type: ${type.toLowerCase()}`)
         }
     }
 }
@@ -47,8 +47,10 @@ export class Attribute {
         let tokens = attribute.split(" ");
 
         let name = tokens[2];
-        let type = AttributeCompoundType.fromString(tokens[1]);
+        let typeName = tokens[1];
+
         let location = gl.getAttribLocation(shader, name);
+        let type = AttributeCompoundType.fromString(typeName);
 
         return new Attribute(name, type, location);
     }

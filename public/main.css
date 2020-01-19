@@ -3,6 +3,7 @@ html, body {
     overflow: hidden;
     margin: 0;
     padding: 0;
+    color: white;
 }
 
 canvas {
@@ -17,8 +18,8 @@ div.game-container {
     height: 100%;
 }
 
-.hidden {
-    display: none;
+.floating {
+    position: absolute;
 }
 
 .loading-spinner {

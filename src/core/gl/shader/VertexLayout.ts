@@ -1,5 +1,5 @@
-import { GL } from './../../Context';
-import { Attribute } from "./Attribute";
+import { GL } from 'core/gl/Context';
+import { Attribute } from "core/gl/shader/Attribute";
 
 interface VertexElement {
     readonly name: string,

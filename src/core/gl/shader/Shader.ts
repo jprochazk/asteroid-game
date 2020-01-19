@@ -1,10 +1,8 @@
-import { UniformBlock } from './../UniformBlock';
-import { UUID } from './../../util/UUID';
-import { GL } from './../Context';
-import { Uniform } from './reflection/Uniform';
-import { ShaderUtils } from "./ShaderUtils";
-import { ShaderReflection } from "./reflection/ShaderReflection";
-import { VertexLayout } from "./reflection/VertexLayout";
+import { UniformBlock } from 'core/gl/UniformBlock';
+import { UUID } from 'core/util/UUID';
+import { GL } from 'core/gl/Context';
+import { ShaderUtils } from "core/gl/shader/ShaderUtils";
+import { VertexLayout } from "core/gl/shader/VertexLayout";
 
 
 export class Shader {
@@ -22,6 +20,11 @@ export class Shader {
         this.uniformBlock.set(data);
     }
 
+
+    public setUniformsPartial(data: { [x: string]: any }) {
+        this.uniformBlock.setPartial(data);
+    }
+
     public bind() {
         GL.context.useProgram(this.program);
     }
@@ -34,11 +37,11 @@ export class Shader {
         const sources = ShaderUtils.splitShader(source);
         const program = ShaderUtils.createShaderProgram(sources);
 
-        let reflectionData = ShaderReflection.reflect(program, sources);
+        let reflectionData = ShaderUtils.reflect(program, sources);
         return new Shader(
             program,
-            VertexLayout.fromAttributes(reflectionData.attributes),
-            reflectionData.uniforms
+            VertexLayout.fromAttributes(reflectionData.attributeArray),
+            reflectionData.uniformBlock
         );
     }
 }

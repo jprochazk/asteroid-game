@@ -1,8 +1,13 @@
-import { Vector3 } from './../math/Math';
-import { Matrix4 } from './../math/Matrix4';
-import { GL } from './../gl/Context';
+import { Vector3, Matrix4 } from 'core/math/Math';
+import { GL } from 'core/gl/Context';
 
-export class PerspectiveCamera3D {
+export interface Camera {
+    projectionMatrix: Matrix4;
+    viewMatrix: Matrix4;
+    position: Vector3;
+}
+
+export class PerspectiveCamera3D implements Camera {
     private worldUp: Vector3;
     private near: number;
     private far: number;
@@ -16,19 +21,37 @@ export class PerspectiveCamera3D {
     private sensitivity: number;
     private moveSpeed: number;
 
-    private position: Vector3;
+    private _position: Vector3;
     private front: Vector3;
     private right: Vector3;
     private up: Vector3;
 
+    /**
+     * Defaults:  
+     * * sensitivity: 0.1
+     * * moveSpeed: 0.1
+     * * near: 0.1
+     * * far: 100
+     * * fov: 60°
+     * * worldUp: [0,1,0]
+     * * position: [0,0,0]
+     */
     constructor(options: {
-        sensitivity?: number, moveSpeed?: number, near?: number, far?: number, fov?: number, width: number, height: number, worldUp?: Vector3
+        sensitivity?: number, 
+        moveSpeed?: number, 
+        near?: number, 
+        far?: number, 
+        fov?: number, 
+        width: number, 
+        height: number, 
+        worldUp?: Vector3,
+        position?: Vector3
     }) {
         const gl = GL.context;
 
         this.near = options.near || 0.1;
         this.far = options.far || 100;
-        this.fov = options.fov || Math.rad(60);
+        this.fov = (options.fov) ? Math.rad(options.fov) : Math.rad(60);
         this.aspectRatio = options.width / options.height;
         this.worldUp = options.worldUp || Vector3.create([0,1,0]);
 
@@ -37,7 +60,7 @@ export class PerspectiveCamera3D {
         this.sensitivity = options.sensitivity || 0.1;
         this.moveSpeed = options.moveSpeed || 0.1;
 
-        this.position = Vector3.create([0,0,0]);
+        this._position = options.position || Vector3.create([0,0,0]);
 
         this.front = Vector3.create([
             Math.cos(Math.rad(this.yaw)) * Math.cos(Math.rad(this.pitch)),
@@ -48,7 +71,7 @@ export class PerspectiveCamera3D {
         this.up = this.right.cross(this.front).normalize();
 
         this._projectionMatrix = Matrix4.perspective(this.fov, this.aspectRatio, this.near, this.far);
-        this._viewMatrix = Matrix4.lookAt(this.position, this.position.clone().add(this.front), this.up);
+        this._viewMatrix = Matrix4.lookAt(this._position, this._position.clone().add(this.front), this.up);
     }
 
     public get projectionMatrix() {
@@ -57,6 +80,10 @@ export class PerspectiveCamera3D {
 
     public get viewMatrix() {
         return this._viewMatrix;
+    }
+
+    public get position() {
+        return this._position;
     }
 
     public resize(newWidth: number, newHeight: number) {
@@ -68,12 +95,12 @@ export class PerspectiveCamera3D {
 		let vel = this.moveSpeed * deltaTime;
 		switch (direction)
 		{
-			case 'forward': this.position.add(this.front.clone().scale(vel)); break;
-			case 'backward': this.position.sub(this.front.clone().scale(vel)); break;
-            case 'right': this.position.add(this.right.clone().scale(vel)); break;
-			case 'left': this.position.sub(this.right.clone().scale(vel)); break;
-			case 'up': this.position.add(this.up.clone().scale(vel)); break;
-			case 'down': this.position.sub(this.up.clone().scale(vel)); break;
+			case 'forward': this._position.add(this.front.clone().scale(vel)); break;
+			case 'backward': this._position.sub(this.front.clone().scale(vel)); break;
+            case 'right': this._position.add(this.right.clone().scale(vel)); break;
+			case 'left': this._position.sub(this.right.clone().scale(vel)); break;
+			case 'up': this._position.add(this.up.clone().scale(vel)); break;
+			case 'down': this._position.sub(this.up.clone().scale(vel)); break;
         }
         
         this.calcViewMatrix();
@@ -109,6 +136,6 @@ export class PerspectiveCamera3D {
         this.right = this.front.cross(this.worldUp).normalize();
         this.up = this.right.cross(this.front).normalize();
 
-        this._viewMatrix = Matrix4.lookAt(this.position, this.position.clone().add(this.front), this.up);
+        this._viewMatrix = Matrix4.lookAt(this._position, this._position.clone().add(this.front), this.up);
     }
 }

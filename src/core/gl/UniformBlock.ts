@@ -1,6 +1,4 @@
-import { Uniform } from './shader/reflection/Uniform';
-
-
+import { Uniform } from 'core/gl/shader/Uniform';
 
 export class UniformBlock {
     private uniforms: Map<string, Uniform>
